@@ -15,30 +15,34 @@ export async function sendEmailsFromExcel(req, res) {
     let sentCount = 0;
 
     for (const row of data) {
-      const { Email, Name, Message } = row;
+      const { Email, Name, Message, Subject } = row;
 
-      if (!Email || !Name || !Message) continue;
+      if (!Email || !Name || !Message || !Subject) continue;
 
       const personalizedMessage = `<p>Dear ${Name},</p><p>${Message}</p>`;
 
       await sendMail({
         from: process.env.EMAIL_USER,
         to: Email,
-        subject: 'Personalized Email from Our App',
+        subject: Subject,
         html: personalizedMessage,
       });
 
       await email.create({
         to: Email,
-        subject: 'Personalized Email from Our App',
+        subject: Subject,
         message: personalizedMessage,
       });
 
       sentCount++;
     }
 
-    fs.unlinkSync(filePath); // delete uploaded file
-    res.status(200).json({ success: true, message: `${sentCount} emails sent.` });
+    fs.unlinkSync(filePath); // delete uploaded file after processing
+
+    res.status(200).json({
+      success: true,
+      message: `${sentCount} emails sent.`,
+    });
   } catch (error) {
     console.error('❌ Error processing file:', error);
     res.status(500).json({ error: 'Failed to send emails from uploaded file.' });

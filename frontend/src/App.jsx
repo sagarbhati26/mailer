@@ -2,77 +2,43 @@ import { useState } from "react";
 import axios from "axios";
 
 function App() {
-  const [emails, setEmails] = useState([
-    { Name: "", Email: "", Subject: "", Message: "" },
-  ]);
+  const [file, setFile] = useState(null);
   const [status, setStatus] = useState("");
 
-  const handleChange = (index, field, value) => {
-    const newEmails = [...emails];
-    newEmails[index][field] = value;
-    setEmails(newEmails);
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
   };
 
-  const addRow = () => {
-    setEmails([...emails, { Name: "", Email: "", Subject: "", Message: "" }]);
-  };
+  const handleUpload = async () => {
+    if (!file) {
+      setStatus("Please select an Excel file first.");
+      return;
+    }
 
-  const handleSend = async () => {
-    setStatus("Sending...");
+    setStatus("Uploading...");
+    const formData = new FormData();
+    formData.append("file", file);
+
     try {
-      const res = await axios.post(
-        "http://localhost:5005/api/emails/send",
-        emails,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await axios.post("http://localhost:5005/api/emails/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       setStatus(res.data.message || "Emails sent!");
     } catch (error) {
-      setStatus("Failed to send emails.");
-      console.error(error);
+      console.error("Upload error:", error);
+      setStatus("Failed to upload and send emails.");
     }
   };
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>📤 Bulk Email Sender</h2>
-      {emails.map((row, index) => (
-        <div key={index} style={{ marginBottom: "1rem" }}>
-          <input
-            type="text"
-            placeholder="Name"
-            value={row.Name}
-            onChange={(e) => handleChange(index, "Name", e.target.value)}
-            style={{ marginRight: "0.5rem" }}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={row.Email}
-            onChange={(e) => handleChange(index, "Email", e.target.value)}
-            style={{ marginRight: "0.5rem" }}
-          />
-          <input
-            type="text"
-            placeholder="Subject"
-            value={row.Subject}
-            onChange={(e) => handleChange(index, "Subject", e.target.value)}
-            style={{ marginRight: "0.5rem", width: "200px" }}
-          />
-          <input
-            type="text"
-            placeholder="Message"
-            value={row.Message}
-            onChange={(e) => handleChange(index, "Message", e.target.value)}
-            style={{ width: "300px" }}
-          />
-        </div>
-      ))}
-      <button onClick={addRow} style={{ marginRight: "1rem" }}>➕ Add More</button>
-      <button onClick={handleSend}>📨 Send Emails</button>
+      <h2>📤 Bulk Email Sender via Excel</h2>
+      
+      <input type="file" accept=".xlsx" onChange={handleFileChange} />
+      <button onClick={handleUpload} style={{ marginLeft: "1rem" }}>📨 Upload & Send</button>
+
       <div style={{ marginTop: "1rem", fontWeight: "bold" }}>{status}</div>
     </div>
   );
